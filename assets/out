@@ -196,15 +196,13 @@ image_id="$(image_from_tag "$repository" "$tag_name")"
 digest="$(docker inspect --format='{{index .RepoDigests 0}}' "${repository}:${tag_name}" | sed -e "s%^.*@%%")"
 
 if [ "$need_tag_as_latest" = "true" ] && [ "${tag_name}" != "latest" ]; then
-  docker tag "${repository}:${tag_name}" "${repository}:latest"
-  docker push "${repository}:latest"
+  docker buildx imagetools create -t "${repository}:latest" "${repository}:${tag_name}"
   echo "${repository}:${tag_name} tagged as latest"
 fi
 
 if [ -n "$additional_tag_names" ]; then
   for additional_tag in $additional_tag_names; do
-    docker tag "${repository}:${tag_name}" "${repository}:${additional_tag}"
-    docker push "${repository}:${additional_tag}"
+    docker buildx imagetools create -t "${repository}:${additional_tag}" "${repository}:${tag_name}"
     echo "${repository}:${tag_name} tagged as ${additional_tag}"
   done
 fi

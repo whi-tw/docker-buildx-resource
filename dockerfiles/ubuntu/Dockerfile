@@ -8,9 +8,9 @@ RUN go build -o /assets/check github.com/concourse/docker-image-resource/cmd/che
 RUN go build -o /assets/print-metadata github.com/concourse/docker-image-resource/cmd/print-metadata
 RUN go build -o /assets/ecr-login github.com/concourse/docker-image-resource/vendor/github.com/awslabs/amazon-ecr-credential-helper/ecr-login/cmd
 RUN set -e; \
-    for pkg in $(go list ./...); do \
-      go test -o "/tests/$(basename $pkg).test" -c $pkg; \
-    done
+  for pkg in $(go list ./...); do \
+  go test -o "/tests/$(basename $pkg).test" -c $pkg; \
+  done
 
 # stage: resource
 FROM ubuntu:bionic AS resource
@@ -18,38 +18,31 @@ FROM ubuntu:bionic AS resource
 # docker hosts their own packages, this steps sets up the repo for apt-get
 RUN apt-get update; \
   apt-get install -y --no-install-recommends \
-    apt-transport-https \
-    ca-certificates \
-    curl \
-    gnupg-agent \
-    software-properties-common; \
+  apt-transport-https \
+  ca-certificates \
+  curl \
+  gnupg-agent \
+  software-properties-common; \
   curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add - ; \
   add-apt-repository \
-   "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
-   $(lsb_release -cs) \
-   stable";
+  "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
+  $(lsb_release -cs) \
+  stable";
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    docker-ce \
-    jq \
-    ca-certificates \
-    xz-utils \
-    iproute2 \
-    binfmt-support \
-    qemu-user-static \
-  && rm -rf /var/lib/apt/lists/* \
-  && \
-    mv /usr/bin/qemu-aarch64-static /usr/bin/qemu-aarch64 && \
-    mv /usr/bin/qemu-arm-static /usr/bin/qemu-arm && \
-    mv /usr/bin/qemu-ppc64le-static /usr/bin/qemu-ppc64le && \
-    mv /usr/bin/qemu-s390x-static /usr/bin/qemu-s390x
+  docker-ce \
+  jq \
+  ca-certificates \
+  xz-utils \
+  iproute2 \
+  && rm -rf /var/lib/apt/lists/*
 ENV DOCKER_CLI_EXPERIMENTAL=enabled
 # Install buildx plugin
 RUN mkdir -p ~/.docker/cli-plugins && \
-    curl -s https://api.github.com/repos/docker/buildx/releases/latest | \
-        grep "browser_download_url.*linux-amd64" | cut -d : -f 2,3 | tr -d '"' | \
-    xargs curl -L -o ~/.docker/cli-plugins/docker-buildx && \
-    chmod a+x ~/.docker/cli-plugins/docker-buildx
+  curl -s https://api.github.com/repos/docker/buildx/releases/latest | \
+  grep "browser_download_url.*linux-amd64" | cut -d : -f 2,3 | tr -d '"' | \
+  xargs curl -L -o ~/.docker/cli-plugins/docker-buildx && \
+  chmod a+x ~/.docker/cli-plugins/docker-buildx
 COPY --from=builder /assets /opt/resource
 RUN ln -s /opt/resource/ecr-login /usr/local/bin/docker-credential-ecr-login
 

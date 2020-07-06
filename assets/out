@@ -20,26 +20,26 @@ PATH=/usr/local/bin:$PATH
 
 payload=$(mktemp /tmp/resource-in.XXXXXX)
 
-cat > $payload <&0
+cat >$payload <&0
 
 cd $source
 
-insecure_registries=$(jq -r '.source.insecure_registries // [] | join(" ")' < $payload)
-registry_mirror=$(jq -r '.source.registry_mirror // ""' < $payload)
+insecure_registries=$(jq -r '.source.insecure_registries // [] | join(" ")' <$payload)
+registry_mirror=$(jq -r '.source.registry_mirror // ""' <$payload)
 
-username=$(jq -r '.source.username // ""' < $payload)
-password=$(jq -r '.source.password // ""' < $payload)
-repository=$(jq -r '.source.repository // ""' < $payload)
-ca_certs=$(jq -r '.source.ca_certs // []' < $payload)
-client_certs=$(jq -r '.source.client_certs // []' < $payload)
-max_concurrent_downloads=$(jq -r '.source.max_concurrent_downloads // 3' < $payload)
-max_concurrent_uploads=$(jq -r '.source.max_concurrent_uploads // 3' < $payload)
+username=$(jq -r '.source.username // ""' <$payload)
+password=$(jq -r '.source.password // ""' <$payload)
+repository=$(jq -r '.source.repository // ""' <$payload)
+ca_certs=$(jq -r '.source.ca_certs // []' <$payload)
+client_certs=$(jq -r '.source.client_certs // []' <$payload)
+max_concurrent_downloads=$(jq -r '.source.max_concurrent_downloads // 3' <$payload)
+max_concurrent_uploads=$(jq -r '.source.max_concurrent_uploads // 3' <$payload)
 
-export AWS_ACCESS_KEY_ID=$(jq -r '.source.aws_access_key_id // ""' < $payload)
-export AWS_SECRET_ACCESS_KEY=$(jq -r '.source.aws_secret_access_key // ""' < $payload)
-export AWS_SESSION_TOKEN=$(jq -r '.source.aws_session_token // ""' < $payload)
+export AWS_ACCESS_KEY_ID=$(jq -r '.source.aws_access_key_id // ""' <$payload)
+export AWS_SECRET_ACCESS_KEY=$(jq -r '.source.aws_secret_access_key // ""' <$payload)
+export AWS_SESSION_TOKEN=$(jq -r '.source.aws_session_token // ""' <$payload)
 
-if private_registry "${repository}" ; then
+if private_registry "${repository}"; then
   registry="$(extract_registry "${repository}")"
 else
   registry=
@@ -48,26 +48,26 @@ fi
 certs_to_file "$ca_certs"
 set_client_certs "$client_certs"
 start_docker \
-	"${max_concurrent_downloads}" \
-	"${max_concurrent_uploads}" \
-	"$insecure_registries" \
-	"$registry_mirror"
+  "${max_concurrent_downloads}" \
+  "${max_concurrent_uploads}" \
+  "$insecure_registries" \
+  "$registry_mirror"
 log_in "$username" "$password" "$registry"
 
-tag_source=$(jq -r '.source.tag // "latest"' < $payload)
-tag_params=$(jq -r '.params.tag_file // ""' < $payload)
+tag_source=$(jq -r '.source.tag // "latest"' <$payload)
+tag_params=$(jq -r '.params.tag_file // ""' <$payload)
 # for backwards compatibility, check `tag` if `tag_file` is empty
 if [ -z "$tag_params" ]; then
-  tag_params=$(jq -r '.params.tag // ""' < $payload)
+  tag_params=$(jq -r '.params.tag // ""' <$payload)
 fi
-tag_prefix=$(jq -r '.params.tag_prefix // ""' < $payload)
-additional_tags=$(jq -r '.params.additional_tags // ""' < $payload)
-need_tag_as_latest=$(jq -r '.params.tag_as_latest // "false"' < $payload)
-build_args=$(jq -r '.params.build_args // {}' < $payload)
-build_args_file=$(jq -r '.params.build_args_file // ""' < $payload)
-labels=$(jq -r '.params.labels // {}' < $payload)
-labels_file=$(jq -r '.params.labels_file // ""' < $payload)
-buildx_platforms=$(jq -r '.params.buildx_platforms // "linux/amd64,linux/arm64,linux/arm/v7,linux/arm/v6"' < $payload)
+tag_prefix=$(jq -r '.params.tag_prefix // ""' <$payload)
+additional_tags=$(jq -r '.params.additional_tags // ""' <$payload)
+need_tag_as_latest=$(jq -r '.params.tag_as_latest // "false"' <$payload)
+build_args=$(jq -r '.params.build_args // {}' <$payload)
+build_args_file=$(jq -r '.params.build_args_file // ""' <$payload)
+labels=$(jq -r '.params.labels // {}' <$payload)
+labels_file=$(jq -r '.params.labels_file // ""' <$payload)
+buildx_platforms=$(jq -r '.params.buildx_platforms // "linux/amd64,linux/arm64,linux/arm/v7,linux/arm/v6"' <$payload)
 
 tag_name=""
 if [ -n "$tag_params" ]; then
@@ -94,10 +94,10 @@ if [ -z "$repository" ]; then
   exit 1
 fi
 
-build=$(jq -r '.params.build // ""' < $payload)
-dockerfile=$(jq -r ".params.dockerfile // \"${build}/Dockerfile\"" < $payload)
+build=$(jq -r '.params.build // ""' <$payload)
+dockerfile=$(jq -r ".params.dockerfile // \"${build}/Dockerfile\"" <$payload)
 
-target_name=$(jq -r '.params.target_name // ""' < $payload)
+target_name=$(jq -r '.params.target_name // ""' <$payload)
 
 if [ -n "$build" ]; then
   if [ ! -f "$dockerfile" ]; then
@@ -108,7 +108,7 @@ if [ -n "$build" ]; then
   expanded_build_args=()
 
   # propagate proxy settings to image builder
-  for proxy_var in http_proxy https_proxy no_proxy ; do
+  for proxy_var in http_proxy https_proxy no_proxy; do
     if [ -n "${!proxy_var:-}" ]; then
       expanded_build_args+=("--build-arg")
       expanded_build_args+=("${proxy_var}=${!proxy_var}")
@@ -168,11 +168,11 @@ if [ -n "$build" ]; then
 
   target=()
   if [ -n "${target_name}" ]; then
-   target+=("--target")
-   target+=("${target_name}")
+    target+=("--target")
+    target+=("${target_name}")
   fi
 
-  update-binfmts --enable
+  docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
   docker buildx create --use
   docker buildx inspect --bootstrap
   docker buildx build \
@@ -195,13 +195,13 @@ image_id="$(image_from_tag "$repository" "$tag_name")"
 
 digest="$(docker inspect --format='{{index .RepoDigests 0}}' "${repository}:${tag_name}" | sed -e "s%^.*@%%")"
 
-if [ "$need_tag_as_latest" = "true" ] && [ "${tag_name}" != "latest"  ]; then
+if [ "$need_tag_as_latest" = "true" ] && [ "${tag_name}" != "latest" ]; then
   docker tag "${repository}:${tag_name}" "${repository}:latest"
   docker push "${repository}:latest"
   echo "${repository}:${tag_name} tagged as latest"
 fi
 
-if [ -n "$additional_tag_names" ]    ; then
+if [ -n "$additional_tag_names" ]; then
   for additional_tag in $additional_tag_names; do
     docker tag "${repository}:${tag_name}" "${repository}:${additional_tag}"
     docker push "${repository}:${additional_tag}"
